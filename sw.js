@@ -1,1 +1,1 @@
-const CACHE_NAME = "warehouse-shell-v2";
+const CACHE_NAME = "warehouse-shell-v3";
