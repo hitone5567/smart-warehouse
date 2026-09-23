@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="智慧倉儲系統 — 本機即搜貨品編號、名稱與描述" />
+  <meta name="theme-color" content="#b45309" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="智慧倉儲" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>智慧倉儲系統</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="2" y="6" width="24" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M2 12h24M10 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M9 17h4M15 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h1>智慧倉儲系統</h1>
+            <p class="subtitle">貨品即搜 · 離線可用</p>
+          </div>
+        </div>
+        <button type="button" class="btn-add" id="btnAdd" title="新增貨品">
+          新增貨品
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="toolbar" aria-label="搜尋與篩選">
+        <div class="search-wrap">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input
+            id="search"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="輸入貨品編號、名稱或描述進行精準搜尋..."
+            aria-label="搜尋"
+          />
+          <kbd class="kbd" title="按 / 聚焦搜尋">/</kbd>
+          <button type="button" id="clearSearch" class="clear-btn" hidden aria-label="清除搜尋">×</button>
+        </div>
+
+        <div class="chips" id="chips" role="tablist" aria-label="分類">
+          <!-- filled by app.js -->
+        </div>
+
+        <p class="result-count" id="resultCount" aria-live="polite"></p>
+      </section>
+
+      <section class="grid" id="grid" aria-label="貨品列表"></section>
+      <p class="empty" id="empty" hidden>找不到相符貨品，試試其他關鍵字或分類。</p>
+    </main>
+
+    <footer class="footer">
+      <span>由 Gemini 倉庫搬移 · 本機即搜</span>
+    </footer>
+  </div>
+
+  <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-labelledby="lbName">
+    <div class="lightbox-backdrop" data-close></div>
+    <div class="lightbox-panel">
+      <button type="button" class="lightbox-close" data-close aria-label="關閉">×</button>
+      <div class="lightbox-media" id="lbMedia"></div>
+      <div class="lightbox-body">
+        <div class="lightbox-top">
+          <span class="card-id" id="lbId"></span>
+          <span class="badge" id="lbBadge"></span>
+        </div>
+        <h2 class="lightbox-name" id="lbName"></h2>
+        <p class="lightbox-desc" id="lbDesc"></p>
+        <p class="card-meta" id="lbStorage" hidden></p>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="addModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+    <div class="modal-backdrop" data-close-add></div>
+    <div class="modal-panel" role="document">
+      <button type="button" class="lightbox-close" data-close-add aria-label="關閉">×</button>
+      <h2 id="addModalTitle" class="modal-title">新增貨品</h2>
+      <form id="addForm" class="add-form" novalidate>
+        <label class="field">
+          <span class="field-label">編號 <abbr title="必填">*</abbr></span>
+          <input id="addId" name="id" type="text" required autocomplete="off" placeholder="例如 24000458 或 #24000458" />
+          <span class="field-hint" id="idHint">多數貨品編號為 8 位數字；可保留你輸入的編號。</span>
+        </label>
+        <label class="field">
+          <span class="field-label">名稱 <abbr title="必填">*</abbr></span>
+          <input id="addName" name="name" type="text" required autocomplete="off" placeholder="貨品名稱" />
+        </label>
+        <label class="field">
+          <span class="field-label">分類 <abbr title="必填">*</abbr></span>
+          <select id="addCategory" name="category" required>
+            <option value="原材料">原材料</option>
+            <option value="麵包">麵包</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">描述 <abbr title="必填">*</abbr></span>
+          <textarea id="addDesc" name="description" required rows="3" placeholder="所有貨品都需要描述"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">貯放倉 <span class="optional">選填</span></span>
+          <input id="addStorage" name="storage" type="text" autocomplete="off" placeholder="例如 M1 (4樓) 常溫原料乾倉" />
+        </label>
+        <div class="field photo-field">
+          <span class="field-label">圖片 <span class="optional">選填</span></span>
+          <div class="photo-preview-wrap" id="imagePreviewWrap" hidden>
+            <img id="imagePreview" alt="預覽" hidden />
+            <button type="button" class="btn-clear-photo" id="clearPhoto" aria-label="清除相片">清除相片</button>
+          </div>
+          <div class="photo-actions">
+            <button type="button" class="btn-photo" id="btnCamera">拍照</button>
+            <button type="button" class="btn-photo btn-photo-secondary" id="btnGallery">從相簿選擇</button>
+          </div>
+          <input id="addImageCamera" type="file" accept="image/*" capture="environment" hidden />
+          <input id="addImageGallery" type="file" accept="image/*" hidden />
+          <span class="field-hint">手機可直接開相機拍照；圖片會壓縮後以本機方式儲存。</span>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" data-close-add>取消</button>
+          <button type="submit" class="btn-primary">儲存貨品</button>
+        </div>
+        <p class="form-error" id="addError" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
