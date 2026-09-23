@@ -1,6 +1,23 @@
 (function () {
   "use strict";
 
+  /* CACHE_BUST_V219 */
+  (function forceRefreshCatalog() {
+    try {
+      if (!("serviceWorker" in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.update(); });
+      });
+      if (typeof caches !== "undefined") {
+        caches.keys().then(function (keys) {
+          keys.filter(function (k) { return k.indexOf("warehouse-shell-v1") === 0 || k === "warehouse-shell-v2"; })
+            .forEach(function (k) { caches.delete(k); });
+        });
+      }
+    } catch (_) {}
+  })();
+
+
   const CATEGORIES = ["全部", "麵包", "原材料"];
   const STORAGE_KEY = "warehouse-custom-items-v1";
   const baseItems = Array.isArray(WAREHOUSE_ITEMS)

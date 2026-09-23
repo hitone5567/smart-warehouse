@@ -1,13 +1,12 @@
-/* Service worker — network-first for data.js; cache-first for shell */
-const CACHE_NAME = "warehouse-shell-v2";
+/* Service worker v3 — never precache catalog; network-first for data-*.js */
+const CACHE_NAME = "warehouse-shell-v3";
 const SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
+  "./icons/icon-192.png", "./icons/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -31,17 +30,16 @@ function isHugeDataUrl(request) {
 
 function isImagePath(url) {
   try {
-    const u = new URL(url);
-    return u.pathname.includes("/images/");
+    return new URL(url).pathname.includes("/images/");
   } catch (_) {
     return false;
   }
 }
 
-function isDataJs(url) {
+function isCatalogData(url) {
   try {
-    const u = new URL(url);
-    return u.pathname.endsWith("/data.js") || u.pathname.endsWith("data.js");
+    const p = new URL(url).pathname;
+    return /\/data(?:-v\d+)?\.js$/i.test(p) || p.endsWith("/data.js");
   } catch (_) {
     return false;
   }
@@ -51,13 +49,11 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   if (isHugeDataUrl(req)) return;
-
   const url = req.url;
 
-  // Always network-first for catalog data (avoid stale 87-item cache)
-  if (isDataJs(url)) {
+  if (isCatalogData(url)) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-store" })
         .then((res) => {
           if (res && res.ok) {
             const clone = res.clone();
@@ -70,7 +66,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first (fallback cache) for product images
   if (isImagePath(url)) {
     event.respondWith(
       fetch(req)
@@ -86,7 +81,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for app shell / same-origin static
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
